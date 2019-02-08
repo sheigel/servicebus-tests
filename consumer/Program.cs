@@ -61,15 +61,15 @@ namespace consumer
 
 
             queueClient = new QueueClient(serviceBusConnectionString, "salesmessages");
-            queueClient.PrefetchCount = 100;
+            queueClient.PrefetchCount = 5;
             var messageHandlerOptions = new MessageHandlerOptions(ex =>
             {
                 logger.LogError(ex.Exception, "Failed");
                 return Task.CompletedTask;
             })
             {
-                MaxConcurrentCalls = 1000,
-                AutoComplete = true
+                MaxConcurrentCalls = 2,
+                AutoComplete = false
             };
 
             queueClient.RegisterMessageHandler(MessageHandler, messageHandlerOptions);
@@ -77,6 +77,7 @@ namespace consumer
             async Task MessageHandler(Message msg, CancellationToken ct)
             {
                 Console.WriteLine($"Received message: {Encoding.UTF8.GetString(msg.Body)}");
+                await queueClient.CompleteAsync(msg.SystemProperties.LockToken)
             }
 
             return Task.CompletedTask;
